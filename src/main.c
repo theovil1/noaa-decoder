@@ -6,13 +6,14 @@
 #include "../include/demod.h"
 #include "../include/sync.h"
 #include "../include/bmp.h"
+#include "../include/png_writter.h"
 #include "../include/enhance.h"
 
 int main(int argc, char *argv[]) {
 
     // Gestion des arguments
     if (argc < 2) {
-        printf("Usage: ./decoder input.wav [-o output.bmp] [-c A|B|AB] [--enhance] [--median] [--thermal]\n");
+        printf("Usage: ./decoder input.wav [-o output.bmp] [-c A|B|AB] [--enhance] [--median] [--thermal] [--png]\n");
         return 1;
     }
 
@@ -22,6 +23,7 @@ int main(int argc, char *argv[]) {
     int do_enhance = 0;
     int do_median = 0;
     int do_thermal = 0;
+    int do_png = 0;
 
     // Parser les arguments
     for (int i = 2; i < argc; i++) {
@@ -38,6 +40,8 @@ int main(int argc, char *argv[]) {
             do_median = 1;
         } else if (strcmp(argv[i], "--thermal") == 0) {
             do_thermal = 1;
+        } else if (strcmp(argv[i], "--png") == 0) {
+            do_png = 1;
         }
     }
 
@@ -56,6 +60,7 @@ int main(int argc, char *argv[]) {
 
     // Découper en ligne
     uint8_t *image = NULL;
+    RGB lut[256];
     int img_width;
     int num_lines = sync_build_image(pixels, num_samples, &image, &img_width);
 
@@ -69,11 +74,18 @@ int main(int argc, char *argv[]) {
         if (do_enhance) enhance_contrast(ch, num_lines * ch_width);
 
         if (do_thermal) {
-            RGB lut[256];
             enhance_create_thermal_lut(lut);
-            write_bmp_rgb("thermal.bmp", ch, lut, ch_width, num_lines);
+            if (do_png) {
+                write_png_rgb(output, ch, lut, ch_width, num_lines);
+            } else {
+                write_bmp_rgb(output, ch, lut, ch_width, num_lines);
+            }
         } else {
-            write_bmp(output, ch, ch_width, num_lines);
+            if (do_png) {
+                write_png(output, ch, ch_width, num_lines);
+            } else {
+                write_bmp(output, ch, ch_width, num_lines);
+            }
         }
 
         free(ch);
@@ -81,7 +93,20 @@ int main(int argc, char *argv[]) {
         if (do_median) enhance_median(image, img_width, num_lines);
         if (do_enhance) enhance_contrast(image, num_lines * img_width);
 
-        write_bmp(output, image, img_width, num_lines);
+        if (do_thermal) {
+            enhance_create_thermal_lut(lut);
+            if (do_png) {
+                write_png_rgb(output, image, lut, img_width, num_lines);
+            } else {
+                write_bmp_rgb(output, image, lut, img_width, num_lines);
+            }
+        } else {
+            if (do_png) {
+                write_png(output, image, img_width, num_lines);
+            } else {
+            write_bmp(output, image, img_width, num_lines);
+            }
+        }
     }
 
     printf("Image sauvegardée: %s\n", output);
