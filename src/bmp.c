@@ -56,3 +56,57 @@ int write_bmp(const char *filename, const uint8_t *pixels, int width, int height
     return 0;
 
 }
+
+int write_bmp_rgb(const char *filename, const uint8_t *pixels, const RGB *lut, int width, int height) {
+
+    FILE *f = fopen(filename, "wb");
+    if (!f) return -1;
+
+    int padding = (4 - ((width * 3) % 4)) % 4;
+    int row_size = width * 3 + padding;
+    int image_size = row_size * height;
+
+    // File header, pas de palette, offset = 54
+    BMPFileHeader fh = {
+        .signature = {'B', 'M'},
+        .file_size = 54 + image_size,
+        .reserved1 = 0,
+        .reserved2 = 0,
+        .pixel_offset = 54
+    };
+    fwrite(&fh, sizeof(fh), 1, f);
+
+    // Info header, 24 bits, pas de palette
+    BMPInfoHeader ih = {
+        .header_size = 40,
+        .width = width,
+        .height = height,
+        .planes = 1,
+        .bits_per_pixel = 24,
+        .compression = 0,
+        .image_size = image_size,
+        .x_ppm = 0,
+        .y_ppm = 0,
+        .colors_used = 0,
+        .colors_important = 0
+    };
+    fwrite(&ih, sizeof(ih), 1, f);
+
+    // Pixels en RGB, lignes inversées
+    uint8_t pad[3] = {0};
+    for (int y = height - 1; y >= 0; y--) {
+        
+        for (int x = 0; x < width; x++) {
+            uint8_t gray = pixels[y * width + x];
+            uint8_t bgr[3] = {lut[gray].b, lut[gray].g, lut[gray].r};
+            fwrite(bgr, 3, 1, f);
+        }
+        if (padding > 0) {
+            fwrite(pad, 1, padding, f);
+        }
+
+    }
+
+    fclose(f);
+    return 0;
+}

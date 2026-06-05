@@ -1,6 +1,7 @@
 #ifndef BMP_H
 #define BMP_H
 
+#include "enhance.h"
 #include <stdint.h>
 #include <sys/cdefs.h>
 
@@ -28,5 +29,8 @@ typedef struct __attribute__((packed)) {
 
 int write_bmp(const char *filename, const uint8_t *pixels,
             int width, int height);
+
+int write_bmp_rgb(const char *filename, const uint8_t *pixels,
+                const RGB *lut, int width, int height);
 
 #endif

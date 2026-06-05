@@ -70,3 +70,37 @@ void enhance_median(uint8_t *pixels, int width, int height) {
 
     free(copy);
 }
+
+void enhance_create_thermal_lut(RGB *lut) {
+
+    for (int i = 0; i < 256; i++) {
+        float t = i / 255.0f;
+
+        if (t < 0.25f) {
+            // Noir -> Bleu
+            float s = t / 0.25f;
+            lut[i].r = 0;
+            lut[i].g = 0;
+            lut[i].b = (uint8_t)(s * 255);
+        } else if (t < 0.25f) {
+            // Bleu -> Cyan
+            float s = (t - 0.25f) / 0.25f;
+            lut[i].r = 0;
+            lut[i].g = (uint8_t)(s * 255);
+            lut[i].b = 255;
+        } else if (t < 0.75f) {
+            // Cyan -> Jaune
+            float s = (t - 0.5f) / 0.25f;
+            lut[i].r = (uint8_t)(s * 255);
+            lut[i].g = 255;
+            lut[i].b = (uint8_t)((1 - s) * 255);
+        } else {
+            // Jaune -> Rouge
+            float s = (t - 0.75f) / 0.25f;
+            lut[i].r = 255;
+            lut[i].g = (uint8_t)((1 - s) * 255);
+            lut[i].b = 0;
+        }
+    }
+
+}

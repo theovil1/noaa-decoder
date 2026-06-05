@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
 
     // Gestion des arguments
     if (argc < 2) {
-        printf("Usage: ./decoder input.wav [-o output.bmp] [-c A|B|AB] [--enhance] [--median]\n");
+        printf("Usage: ./decoder input.wav [-o output.bmp] [-c A|B|AB] [--enhance] [--median] [--thermal]\n");
         return 1;
     }
 
@@ -21,6 +21,7 @@ int main(int argc, char *argv[]) {
     char channel = 'X'; // X = image complète
     int do_enhance = 0;
     int do_median = 0;
+    int do_thermal = 0;
 
     // Parser les arguments
     for (int i = 2; i < argc; i++) {
@@ -35,6 +36,8 @@ int main(int argc, char *argv[]) {
             do_enhance = 1;
         } else if (strcmp(argv[i], "--median") == 0) {
             do_median = 1;
+        } else if (strcmp(argv[i], "--thermal") == 0) {
+            do_thermal = 1;
         }
     }
 
@@ -65,7 +68,14 @@ int main(int argc, char *argv[]) {
         if (do_median) enhance_median(ch, ch_width, num_lines);
         if (do_enhance) enhance_contrast(ch, num_lines * ch_width);
 
-        write_bmp(output, ch, ch_width, num_lines);
+        if (do_thermal) {
+            RGB lut[256];
+            enhance_create_thermal_lut(lut);
+            write_bmp_rgb("thermal.bmp", ch, lut, ch_width, num_lines);
+        } else {
+            write_bmp(output, ch, ch_width, num_lines);
+        }
+
         free(ch);
     } else {
         if (do_median) enhance_median(image, img_width, num_lines);
